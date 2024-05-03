@@ -3,12 +3,13 @@
 #include <HardwareSerial.h>
 
 HardwareSerial SerialPort(2);
+//************************************************************
 
-int slave_1_id = 1;
-int slave_2_id = 2;
-int slave_3_id = 3;
-int slave_4_id = 4;
-
+const byte slave_1_id = 0b00;
+const byte slave_2_id = 0b01;
+const byte slave_3_id = 0b10;
+const byte slave_4_id = 0b11;
+//************************************************************
 
 const int BUTTON_PIN_01 = 4;
 const int BUTTON_PIN_02 = 12;
@@ -17,8 +18,13 @@ const int BUTTON_PIN_04 = 27;
 
 const int Enable =  2;
 
-int opcion = 0;
+const byte funcion_0 = 0b01;
+const byte funcion_1 = 0b10;
+const byte funcion_2 = 0b11;
 
+
+int opcion = 0;
+//************************************************************
 void Select_Opcion(){
   if(BUTTON_PIN_01==HIGH){
     opcion = 1;
@@ -30,6 +36,7 @@ void Select_Opcion(){
     opcion = 0;
   }
 }
+//************************************************************
 
 void setup() {
   Serial.begin(9600);
@@ -45,6 +52,7 @@ void setup() {
   pinMode(BUTTON_PIN_04, INPUT);
 
 }
+//************************************************************
 
 void loop() {
   Select_Opcion();
@@ -55,7 +63,7 @@ void loop() {
       digitalWrite(Enable, HIGH);
 
       SerialPort.print(slave_1_id);
-      SerialPort.print("ON");
+      SerialPort.print(funcion_0);
       SerialPort.flush();
 
       digitalWrite(Enable, LOW);
@@ -64,7 +72,7 @@ void loop() {
       digitalWrite(Enable, HIGH);
 
       SerialPort.print(slave_2_id);
-      SerialPort.print("ON");
+      SerialPort.print(funcion_1);
       SerialPort.flush();
 
       digitalWrite(Enable, LOW); 
@@ -81,27 +89,33 @@ void loop() {
       digitalWrite(Enable, HIGH);
 
       SerialPort.print(slave_1_id);
-      SerialPort.print("ON");
+      SerialPort.print(funcion_0);
       SerialPort.flush();
 
-      digitalWrite(Enable, LOW);
+      opcion = 0;
+      //digitalWrite(Enable, LOW);
       //delay(2000);
     
     case 2:   //SENSAR HUMEDAD
       digitalWrite(Enable, HIGH);
 
       SerialPort.print(slave_2_id);
-      SerialPort.print("ON");
+      SerialPort.print(funcion_1);
       SerialPort.flush();
 
-      digitalWrite(Enable, LOW); 
+      digitalWrite(Enable, LOW);
+
       if(SerialPort.available()){
         Serial.println(SerialPort.readString());
       }
+
+      opcion = 0;
     break;
 
     case 3:   //MOTOR
       //Codigo del motor
+
+      opcion = 0;
     break;
   }
 
