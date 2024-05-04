@@ -5,10 +5,10 @@
 HardwareSerial SerialPort(2);
 //************************************************************
 
-const byte slave_1_id = 0b00;
-const byte slave_2_id = 0b01;
-const byte slave_3_id = 0b10;
-const byte slave_4_id = 0b11;
+const byte slave_1_id = 0b01;
+const byte slave_2_id = 0b10;
+const byte slave_3_id = 0b11;
+//const byte slave_4_id = 0b11;
 //************************************************************
 
 const int BUTTON_PIN_01 = 4;
@@ -18,9 +18,9 @@ const int BUTTON_PIN_04 = 27;
 
 const int Enable =  2;
 
-const byte funcion_0 = 0b01;
-const byte funcion_1 = 0b10;
-const byte funcion_2 = 0b11;
+const byte funcion_0 = 0b01;    //LED
+const byte funcion_1 = 0b10;    //sensor
+const byte funcion_2 = 0b11;    //MOTOR
 
 
 int opcion = 0;

@@ -13,7 +13,7 @@ int Slave;
 
 void setup() 
 { 
-  Serial.begin(115200);
+  Serial.begin(9600);
   SerialPort.begin(9600, SERIAL_8N1, 16, 17); 
   SerialPort.setTimeout(250);
 

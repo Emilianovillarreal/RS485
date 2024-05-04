@@ -2,17 +2,21 @@
 #include <HardwareSerial.h>
 #include "DHT.h"
 
+HardwareSerial SerialPort(2);
+//************************************************************
+
 #define DHTPIN 5
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
 float h;
 float t;
+//************************************************************
 
-HardwareSerial SerialPort(2);
+const byte slave_2_id = 0b10;
+//************************************************************
 
 const int Enable =  2;
-const int SlaveNumber = 2;
 int Slave;
 
 void setup() 
@@ -31,14 +35,14 @@ void loop()
   digitalWrite(Enable, LOW); 
 
   if(SerialPort.available()){
-    Slave = SerialPort.parseInt();
-    Serial.println(Slave);
+    byte trama = SerialPort.read();
+    Serial.println((trama>>6)&0b11);
 
-    if(Slave == SlaveNumber){   
-      String command = SerialPort.readString();  
+    if(slave_2_id == (trama>>6)&0b11){   
+      byte command =(trama>>4)&0b11;  
       Serial.println(command);
 
-      if(command == "ON"){
+      if(command == 0b10){
         h=dht.readHumidity();
         t=dht.readTemperature();
 
