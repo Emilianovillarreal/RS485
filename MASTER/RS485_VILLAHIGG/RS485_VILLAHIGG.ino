@@ -8,7 +8,8 @@ HardwareSerial SerialPort(2);
 const byte slave_1_id = 0b01;
 const byte slave_2_id = 0b10;
 const byte slave_3_id = 0b11;
-//const byte slave_4_id = 0b11;
+
+const byte CRC = 0b1111;
 //************************************************************
 
 const int BUTTON_PIN_01 = 4;
@@ -64,6 +65,8 @@ void loop() {
 
       SerialPort.print(slave_1_id);
       SerialPort.print(funcion_0);
+      SerialPort.print(CRC);
+
       SerialPort.flush();
 
       digitalWrite(Enable, LOW);
@@ -73,6 +76,7 @@ void loop() {
 
       SerialPort.print(slave_2_id);
       SerialPort.print(funcion_1);
+      SerialPort.print(CRC);
       SerialPort.flush();
 
       digitalWrite(Enable, LOW); 
@@ -90,6 +94,7 @@ void loop() {
 
       SerialPort.print(slave_1_id);
       SerialPort.print(funcion_0);
+      SerialPort.print(CRC);
       SerialPort.flush();
 
       opcion = 0;
@@ -101,6 +106,7 @@ void loop() {
 
       SerialPort.print(slave_2_id);
       SerialPort.print(funcion_1);
+      SerialPort.print(CRC);
       SerialPort.flush();
 
       digitalWrite(Enable, LOW);
