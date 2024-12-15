@@ -2,20 +2,18 @@
 #include <HardwareSerial.h>
 
 HardwareSerial SerialPort(2);
-//************************************************************
 
+// ID del esclavo
 const byte slave_1_id = 0b01;
-//************************************************************
+
+// Pin de habilitación y LED
 const int Enable =  2;
 const int LED = 4;
-
-int Slave;
 
 void setup() 
 { 
   Serial.begin(9600);
   SerialPort.begin(9600, SERIAL_8N1, 16, 17); 
-  SerialPort.setTimeout(250);
 
   pinMode(Enable, OUTPUT);
   digitalWrite(Enable, LOW);
@@ -23,28 +21,32 @@ void setup()
   pinMode(LED, OUTPUT); 
   digitalWrite(LED, LOW);
 } 
-void loop() 
-{
-  digitalWrite(Enable, LOW); 
-  if(SerialPort.available())
-  {
-      SerialPort.flush();
-      byte trama = SerialPort.read();
-      Serial.println((trama>>6)&0b11);
-      if(slave_1_id == ((trama>>6)&0b11))
-      {   
-        byte command =(trama>>4)&0b11;  
-          Serial.println(command);
-           if(command == 0b01)
-           {
-              digitalWrite(LED, HIGH);
-              delay(500);
-              digitalWrite(LED, LOW);
+
+void loop() {
+    if (SerialPort.available()) {
+        byte trama = SerialPort.read();
+
+        byte id = (trama >> 6) & 0b00000011;         // Extraer los 2 bits más significativos
+        byte funcion = (trama >> 4) & 0b00000011;    // Extraer los siguientes 2 bits
+        byte crc = trama & 0b00001111;               // Extraer los 4 bits menos significativos
+
+        Serial.print("ID: ");
+        Serial.println(id, BIN);
+        Serial.print("Función: ");
+        Serial.println(funcion, BIN);
+        Serial.print("CRC: ");
+        Serial.println(crc, BIN);
+
+        // Implementa la acción deseada en función del ID y la función
+        if (id == 1) {
+          Serial.println("id------");
+            if (funcion == 2) {  // Función de encender LED
+                Serial.println("funcion------");
+                digitalWrite(LED, HIGH);
+                delay(1000);
+                digitalWrite(LED, LOW);
+                // enviarRespuesta("Slave 1 is triggered");
             }
-              digitalWrite(Enable, HIGH);
-              SerialPort.print("Slave 1 is triggered"); //
-              SerialPort.flush();
-           }
-           //Serial.println("loop");/
-        }   
+        }
     }
+}
