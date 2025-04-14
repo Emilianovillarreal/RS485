@@ -1,115 +1,129 @@
+// SLAVE 2 - SENSOR HC-SR04 Y Buzzer con MEF
 #include <HardwareSerial.h>
-#include "DHT.h"
 #include <stdint.h>
-//#include <LiquidCrystal.h>
+#include <Arduino.h>
+#include <string.h>
 
-#define DHTPIN 4
-#define DHTTYPE DHT11
+// ID del esclavo
+const byte slave_2_id = 0b10;
 
-DHT dht(DHTPIN, DHTTYPE);
+// Funciones 
+const byte funcion_2 = 0b011; // Buzzer
+const byte funcion_3 = 0b100; // Sensor HC-SR04
+
+// Pin de habilitación 
+const int Enable =  2;
 HardwareSerial SerialPort(2);
 
-float humedad;
-float temperatura;
+// Buzzer
+const int buzzerPin = 27;
+const int frecuenciaSol = 392;
+const int duracionSol = 500;
 
-const byte slave_2_id = 0b10;
-const byte funcion_DHT = 0b10;
+// Sensor HC-SR04
+int trigPin = 33;
+int echoPin = 12;
+long duration, cm;
 
-const int Enable = 2;
+// Estados de la MEF
+enum Estado { ESPERANDO_TRAMA, IDENTIFICANDO_ID, DECODIFICANDO_FUNCION, EJECUTANDO_FUNCION, ENVIANDO_RESPUESTA };
+Estado estadoActual = ESPERANDO_TRAMA;
 
-// Configuración del display LCD (pines RS, E, D4, D5, D6, D7)
-//LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
+// Variables para decodificación
+byte tramaRecibida;
+byte id;
+byte funcion;
+byte crc;
 
 void setup() {
   Serial.begin(9600);
   SerialPort.begin(9600, SERIAL_8N1, 16, 17); 
-  
+
   pinMode(Enable, OUTPUT);
   digitalWrite(Enable, LOW);
 
-  dht.begin();
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
 
-  //lcd.begin(16, 2);
-  //lcd.print(F("Temp y Humedad")); 
-  delay(2000);
-
-  Serial.println(F("Entro SETUP-----"));
+  Serial.println("ID");
+  Serial.println(slave_2_id);  
 }
 
 void loop() {
- 
-  
-  if (SerialPort.available() > 1) {
-    yield(); // Resetear el watchdog
-    digitalWrite(Enable, LOW);
-    Serial.println(F("Mensaje disponible"));
-
-    byte trama = SerialPort.read();
-
-    byte id = (trama >> 6) & 0b00000011;         // Extraer los 2 bits más significativos
-    byte funcion = (trama >> 4) & 0b00000011;    // Extraer los siguientes 2 bits
-    byte crc = trama & 0b00001111;               // Extraer los 4 bits menos significativos
-
-    Serial.print(F("ID: "));
-    Serial.println(id, BIN);
-    Serial.print(F("Función: "));
-    Serial.println(funcion, BIN);
-    Serial.print(F("CRC: "));
-    Serial.println(crc, BIN);
-
-    if (id == slave_2_id && funcion == funcion_DHT) {
-      Serial.println(F("Activando el sensor..."));
-
-      humedad = dht.readHumidity();
-      temperatura = dht.readTemperature();
-      Serial.print("Humedad: ");
-      Serial.println(humedad);
-
-      Serial.print("Temperatura: ");
-      Serial.println(temperatura);
-
-
-
-      if (isnan(humedad) || isnan(temperatura)) {
-        Serial.println(F("Error leyendo el sensor"));
-//        lcd.clear();
-//        lcd.print(F("Error en sensor"));
-        //delay(2000);
-        return;
+  switch (estadoActual) {
+    case ESPERANDO_TRAMA:
+      if (SerialPort.available()) {
+        tramaRecibida = SerialPort.read();
+        estadoActual = IDENTIFICANDO_ID;
       }
+      break;
 
-      // Mostrar en el LCD
-//      lcd.clear();
-//      lcd.setCursor(0, 0);
-//      lcd.print(F("Temp: "));
-//      lcd.print(temperatura);
-//      lcd.print(F(" C"));
+    case IDENTIFICANDO_ID:
+      id = (tramaRecibida >> 6) & 0b00000011;
+      funcion = (tramaRecibida >> 3) & 0b00000111;
+      crc = tramaRecibida & 0b00000111;
+      Serial.print("ID: "); Serial.println(id, BIN);
+      Serial.print("Función: "); Serial.println(funcion, BIN);
+      Serial.print("CRC: "); Serial.println(crc, BIN);
+      if (id == slave_2_id) {
+        estadoActual = DECODIFICANDO_FUNCION;
+      } else {
+        estadoActual = ESPERANDO_TRAMA;
+      }
+      break;
 
-  //    lcd.setCursor(0, 1);
-  //    lcd.print(F("Hum: "));
-  //    lcd.print(humedad);
-  ///    lcd.print(F(" %"));
+    case DECODIFICANDO_FUNCION:
+      if (funcion == funcion_2 || funcion == funcion_3) {
+        estadoActual = EJECUTANDO_FUNCION;
+      } else {
+        Serial.println("Función no válida");
+        estadoActual = ESPERANDO_TRAMA;
+      }
+      break;
 
-     // delay(2000);
+    case EJECUTANDO_FUNCION:
+      if (funcion == funcion_2) {
+        Serial.println("Ejecutando Buzzer");
+        tone(buzzerPin, frecuenciaSol, duracionSol);
+        delay(duracionSol + 100);
+        noTone(buzzerPin);
+        delay(2000);
+      } else if (funcion == funcion_3) {
+        Serial.println("Ejecutando HC-SR04");
+        digitalWrite(trigPin, LOW);
+        delayMicroseconds(5);
+        digitalWrite(trigPin, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(trigPin, LOW);
+        duration = pulseIn(echoPin, HIGH);
+        cm = (duration / 2) / 29.1;
+        Serial.print(cm); Serial.println("cm");
+      }
+      estadoActual = ENVIANDO_RESPUESTA;
+      break;
 
-      // Enviar la trama
-      byte trama[3];
-      trama[0] = 0xFF; // Delimitador de inicio
-      trama[1] = (byte)humedad;
-      trama[2] = (byte)temperatura;
-      SerialPort.write(trama, sizeof(trama));
-
-
-      Serial.print(F("Trama[0]: "));
-      Serial.println(trama[0], BIN);
-      Serial.print(F("Trama[1]: "));
-      Serial.println(trama[1], BIN);
-
-      digitalWrite(Enable, HIGH);
-      SerialPort.write(trama, sizeof(trama));
-      SerialPort.flush();
-      digitalWrite(Enable, LOW);
-      delay(50);
-    }
+    case ENVIANDO_RESPUESTA:
+      if (funcion == funcion_2) {
+        byte trama[3] = {0xFF, slave_2_id, funcion_2};
+        enviarTrama(trama, 3);
+      } else if (funcion == funcion_3) {
+        byte trama[4] = {0xFF, slave_2_id, funcion_3, (byte)cm};
+        enviarTrama(trama, 4);
+      }
+      estadoActual = ESPERANDO_TRAMA;
+      break;
   }
+}
+
+void enviarTrama(byte* trama, int longitud) {
+  Serial.println("Enviando trama");
+  for (int i = 0; i < longitud; i++) {
+    Serial.print("Trama["); Serial.print(i); Serial.print("]: "); Serial.println(trama[i], BIN);
+  }
+  digitalWrite(Enable, HIGH);
+  SerialPort.write(trama, longitud);
+  SerialPort.flush();
+  digitalWrite(Enable, LOW);
+  Serial.println("Trama enviada");
 }
